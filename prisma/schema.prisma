@@ -1,0 +1,624 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+}
+
+enum Role {
+  SUPER_ADMIN
+  ADMIN
+  HEADTEACHER
+  TEACHER
+  ACCOUNTANT
+  PARENT
+  STUDENT
+  LIBRARIAN
+}
+
+model School {
+  id                String   @id @default(cuid())
+  name              String
+  motto             String?
+  logo              String?
+  address           String?
+  region            String?
+  district          String?
+  circuit           String?
+  phone             String?
+  email             String?
+  subscription_plan String?  @default("FREE_TRIAL")
+  created_at        DateTime @default(now())
+  report_config     Json?
+  academic_config   Json?
+
+  users    User[]
+  classes        Class[]
+  students       Student[]
+  fee_structures FeeStructure[]
+  invoices       Invoice[]
+  sms_logs       SmsLog[]
+  sms_credits    Int      @default(1000)
+  attendances    Attendance[]
+  subjects       Subject[]
+  exams          Exam[]
+  assignments    Assignment[]
+  timetables     Timetable[]
+  teacher_profiles TeacherProfile[]
+  bus_routes       BusRoute[]
+  cafeteria_items  CafeteriaItem[]
+  cafeteria_txs    CafeteriaTransaction[]
+  wallets          StudentWallet[]
+  accounts         Account[]
+  ledger_txs       LedgerTransaction[]
+  books            Book[]
+  assets           Asset[]
+
+  @@map("schools")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  school_id     String?
+  name          String
+  email         String    @unique
+  password_hash String
+  role          Role      @default(PARENT)
+  is_active     Boolean   @default(true)
+  last_login    DateTime?
+
+  school               School?   @relation(fields: [school_id], references: [id])
+  attendances          Attendance[]
+  subjects             Subject[]
+  assignments_created  Assignment[] @relation("TeacherAssignments")
+  assignments_graded   AssignmentSubmission[] @relation("GraderSubmissions")
+  timetables           Timetable[]  @relation("TeacherTimetable")
+  teacher_profile      TeacherProfile?
+  ledger_recorded      LedgerTransaction[] @relation("RecordedTransactions")
+
+  @@index([school_id])
+  @@map("users")
+}
+
+enum Level {
+  PRIMARY
+  JHS
+  SHS
+  TVET
+}
+
+enum StudentStatus {
+  ACTIVE
+  GRADUATED
+  TRANSFERRED
+  DISMISSED
+}
+
+model Class {
+  id            String   @id @default(cuid())
+  school_id     String
+  name          String   // e.g., "JHS 1A"
+  level         Level
+  academic_year String   // e.g., "2024/2025"
+  
+  school        School   @relation(fields: [school_id], references: [id])
+  students       Student[]
+  fee_structures FeeStructure[]
+  attendances    Attendance[]
+  assignments    Assignment[]
+  timetables     Timetable[]
+
+  @@index([school_id])
+  @@map("classes")
+}
+
+model Student {
+  id               String       @id @default(cuid())
+  school_id        String
+  class_id         String?
+  admission_number String
+  first_name       String
+  last_name        String
+  dob              DateTime
+  gender           String
+  parent_name      String
+  parent_phone     String
+  address          String?
+  region           String?
+  status           StudentStatus @default(ACTIVE)
+  photo_url        String?
+  enrolled_at      DateTime      @default(now())
+
+  school           School @relation(fields: [school_id], references: [id])
+  class            Class?    @relation(fields: [class_id], references: [id])
+  invoices         Invoice[]
+  attendances      Attendance[]
+  exam_results     ExamResult[]
+  assignment_subs  AssignmentSubmission[]
+  transport_subs   TransportEnrollment[]
+  cafeteria_txs    CafeteriaTransaction[]
+  wallet           StudentWallet?
+  book_loans       BookLoan[]
+
+  @@unique([school_id, admission_number])
+  @@index([school_id])
+  @@map("students")
+}
+
+enum FeeType {
+  TUITION
+  BOARDING
+  PTA
+  EXAM
+  OTHER
+}
+
+enum InvoiceStatus {
+  PENDING
+  PARTIAL
+  PAID
+  OVERDUE
+}
+
+enum PaymentMethod {
+  CASH
+  MOMO
+  PAYSTACK
+  BANK
+}
+
+model FeeStructure {
+  id            String   @id @default(cuid())
+  school_id     String
+  class_id      String
+  academic_year String
+  name          String
+  amount        Decimal  @db.Decimal(10, 2)
+  fee_type      FeeType
+
+  school        School   @relation(fields: [school_id], references: [id])
+  class         Class    @relation(fields: [class_id], references: [id])
+
+  @@index([school_id, class_id])
+  @@map("fee_structures")
+}
+
+model Invoice {
+  id            String   @id @default(cuid())
+  school_id     String
+  student_id    String
+  academic_year String
+  term          String
+  total_amount  Decimal  @db.Decimal(10, 2)
+  amount_paid   Decimal  @db.Decimal(10, 2) @default(0.00)
+  balance       Decimal  @db.Decimal(10, 2)
+  status        InvoiceStatus @default(PENDING)
+
+  school        School   @relation(fields: [school_id], references: [id])
+  student       Student  @relation(fields: [student_id], references: [id])
+  payments      Payment[]
+
+  @@index([school_id, student_id])
+  @@map("invoices")
+}
+
+model Payment {
+  id            String   @id @default(cuid())
+  invoice_id    String
+  amount        Decimal  @db.Decimal(10, 2)
+  method        PaymentMethod
+  reference     String?  @unique
+  paid_at       DateTime @default(now())
+  recorded_by   String   
+
+  invoice       Invoice  @relation(fields: [invoice_id], references: [id])
+
+  @@index([invoice_id])
+  @@map("payments")
+}
+
+enum SmsStatus {
+  SENT
+  FAILED
+  PENDING
+}
+
+model SmsLog {
+  id               String       @id @default(cuid())
+  school_id        String
+  recipient_phone  String
+  message          String       @db.Text
+  status           SmsStatus    @default(PENDING)
+  cost             Decimal      @db.Decimal(10, 4) @default(0.0000)
+  sent_at          DateTime     @default(now())
+
+  school           School @relation(fields: [school_id], references: [id])
+
+  @@index([school_id])
+  @@map("sms_logs")
+}
+
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  LATE
+  EXCUSED
+}
+
+model Attendance {
+  id          String   @id @default(cuid())
+  school_id   String
+  student_id  String
+  class_id    String
+  date        DateTime @db.Date 
+  status      AttendanceStatus @default(PRESENT)
+  marked_by   String   
+  marked_at   DateTime @default(now())
+
+  school      School   @relation(fields: [school_id], references: [id])
+  student     Student  @relation(fields: [student_id], references: [id])
+  class       Class    @relation(fields: [class_id], references: [id])
+  marker      User     @relation(fields: [marked_by], references: [id])
+
+  @@unique([student_id, date]) 
+  @@index([school_id, class_id, date])
+  @@map("attendance")
+}
+
+enum ExamType {
+  CLASS_TEST
+  MID_TERM
+  END_OF_TERM
+  MOCK
+  BECE_PREDICTION
+}
+
+model Subject {
+  id          String   @id @default(cuid())
+  school_id   String
+  name        String   
+  code        String   
+  teacher_id  String?  
+
+  school      School   @relation(fields: [school_id], references: [id])
+  teacher     User?    @relation(fields: [teacher_id], references: [id])
+  results     ExamResult[]
+  assignments Assignment[]
+  timetables  Timetable[]
+
+  @@index([school_id])
+  @@map("subjects")
+}
+
+model Exam {
+  id            String   @id @default(cuid())
+  school_id     String
+  name          String
+  term          String
+  academic_year String
+  type          ExamType
+
+  school        School   @relation(fields: [school_id], references: [id])
+  results       ExamResult[]
+
+  @@index([school_id])
+  @@map("exams")
+}
+
+model ExamResult {
+  id          String   @id @default(cuid())
+  exam_id     String
+  student_id  String
+  subject_id  String
+  class_score Decimal  @default(0.0) @db.Decimal(5, 2)
+  exam_score  Decimal  @default(0.0) @db.Decimal(5, 2)
+  total       Decimal  @default(0.0) @db.Decimal(5, 2)
+  grade       Int      
+  remark      String   
+
+  exam        Exam     @relation(fields: [exam_id], references: [id])
+  student     Student  @relation(fields: [student_id], references: [id])
+  subject     Subject  @relation(fields: [subject_id], references: [id])
+
+  @@unique([exam_id, student_id, subject_id])
+  @@index([student_id])
+  @@map("exam_results")
+}
+
+model Assignment {
+  id          String   @id @default(cuid())
+  school_id   String
+  class_id    String
+  subject_id  String
+  title       String
+  description String?  @db.Text
+  due_date    DateTime
+  total_marks Int      @default(100)
+  created_by  String
+
+  school      School   @relation(fields: [school_id], references: [id])
+  class       Class    @relation(fields: [class_id], references: [id])
+  subject     Subject  @relation(fields: [subject_id], references: [id])
+  teacher     User     @relation("TeacherAssignments", fields: [created_by], references: [id])
+  submissions AssignmentSubmission[]
+
+  @@index([school_id, class_id])
+  @@map("assignments")
+}
+
+model AssignmentSubmission {
+  id             String    @id @default(cuid())
+  assignment_id  String
+  student_id     String
+  score          Decimal   @db.Decimal(5, 2)
+  graded_by      String?
+  graded_at      DateTime?
+  comment        String?   @db.Text
+
+  assignment     Assignment @relation(fields: [assignment_id], references: [id])
+  student        Student    @relation(fields: [student_id], references: [id])
+  grader         User?      @relation("GraderSubmissions", fields: [graded_by], references: [id])
+
+  @@unique([assignment_id, student_id])
+  @@index([student_id])
+  @@map("assignment_submissions")
+}
+
+enum DayOfWeek {
+  MONDAY
+  TUESDAY
+  WEDNESDAY
+  THURSDAY
+  FRIDAY
+}
+
+model Timetable {
+  id          String   @id @default(cuid())
+  school_id   String
+  class_id    String
+  subject_id  String
+  teacher_id  String
+  day_of_week DayOfWeek
+  start_time  String   
+  end_time    String   
+  room        String?
+
+  school      School   @relation(fields: [school_id], references: [id])
+  class       Class    @relation(fields: [class_id], references: [id])
+  subject     Subject  @relation(fields: [subject_id], references: [id])
+  teacher     User     @relation("TeacherTimetable", fields: [teacher_id], references: [id])
+
+  @@index([school_id, class_id])
+  @@index([teacher_id, day_of_week]) 
+  @@map("timetables")
+}
+
+enum TeacherStatus {
+  ACTIVE
+  ON_LEAVE
+  TERMINATED
+}
+
+model TeacherProfile {
+  id                String   @id @default(cuid())
+  user_id           String   @unique
+  school_id         String
+  staff_id          String   @unique
+  qualification     String?
+  subject_specialty String?
+  date_joined       DateTime @default(now())
+  salary_amount     Decimal  @db.Decimal(10, 2)
+  bank_name         String?
+  bank_account      String?
+  ssnit_number      String?
+  phone             String?
+  address           String?
+  status            TeacherStatus @default(ACTIVE)
+
+  user              User     @relation(fields: [user_id], references: [id])
+  school            School   @relation(fields: [school_id], references: [id])
+
+  @@index([school_id])
+  @@map("teacher_profiles")
+}
+
+model BusRoute {
+  id              String   @id @default(cuid())
+  school_id       String
+  name            String   
+  pickup_points   Json     
+  driver_name     String
+  driver_phone    String
+  vehicle_number  String
+
+  school          School   @relation(fields: [school_id], references: [id])
+  enrollments     TransportEnrollment[]
+
+  @@index([school_id])
+  @@map("bus_routes")
+}
+
+model TransportEnrollment {
+  id              String   @id @default(cuid())
+  student_id      String
+  route_id        String
+  term            String   
+  amount          Decimal  @db.Decimal(10, 2)
+  paid            Boolean  @default(false)
+
+  student         Student  @relation(fields: [student_id], references: [id])
+  route           BusRoute @relation(fields: [route_id], references: [id])
+
+  @@unique([student_id, route_id, term]) 
+  @@index([route_id])
+  @@map("transport_enrollments")
+}
+
+enum CafeteriaPaymentMethod {
+  CASH
+  WALLET
+}
+
+model CafeteriaItem {
+  id              String   @id @default(cuid())
+  school_id       String
+  name            String
+  unit_price      Decimal  @db.Decimal(10, 2)
+  stock_quantity  Int      @default(0)
+
+  school          School   @relation(fields: [school_id], references: [id])
+
+  @@index([school_id])
+  @@map("cafeteria_items")
+}
+
+model StudentWallet {
+  id              String   @id @default(cuid())
+  student_id      String   @unique
+  school_id       String
+  balance         Decimal  @default(0.00) @db.Decimal(10, 2)
+
+  student         Student  @relation(fields: [student_id], references: [id])
+  school          School   @relation(fields: [school_id], references: [id])
+
+  @@index([school_id])
+  @@map("student_wallets")
+}
+
+model CafeteriaTransaction {
+  id              String   @id @default(cuid())
+  school_id       String
+  student_id      String
+  items           Json     
+  total           Decimal  @db.Decimal(10, 2)
+  payment_method  CafeteriaPaymentMethod
+  created_at      DateTime @default(now())
+
+  school          School   @relation(fields: [school_id], references: [id])
+  student         Student  @relation(fields: [student_id], references: [id])
+
+  @@index([school_id, student_id])
+  @@map("cafeteria_transactions")
+}
+
+enum AccountType {
+  INCOME
+  EXPENSE
+  ASSET
+  LIABILITY
+}
+
+enum TransactionType {
+  CREDIT
+  DEBIT
+}
+
+model Account {
+  id              String   @id @default(cuid())
+  school_id       String
+  name            String   
+  type            AccountType
+  balance         Decimal  @default(0.00) @db.Decimal(12, 2)
+
+  school          School   @relation(fields: [school_id], references: [id])
+  transactions    LedgerTransaction[]
+
+  @@unique([school_id, name]) 
+  @@index([school_id])
+  @@map("accounts")
+}
+
+model LedgerTransaction {
+  id              String   @id @default(cuid())
+  school_id       String
+  account_id      String
+  amount          Decimal  @db.Decimal(12, 2)
+  type            TransactionType
+  description     String?  @db.Text
+  category        String?
+  logo_url        String?
+  theme           String?
+  report_config   Json?
+  recorded_by     String 
+  created_at      DateTime @default(now())
+
+  school          School   @relation(fields: [school_id], references: [id])
+  account         Account  @relation(fields: [account_id], references: [id])
+  recorder        User     @relation("RecordedTransactions", fields: [recorded_by], references: [id])
+
+  @@index([school_id, account_id])
+  @@map("ledger_transactions")
+}
+
+enum LoanStatus {
+  BORROWED
+  RETURNED
+  OVERDUE
+}
+
+model Book {
+  id               String   @id @default(cuid())
+  school_id        String
+  title            String
+  author           String
+  isbn             String?
+  category         String?
+  copies_total     Int      @default(1)
+  copies_available Int      @default(1)
+
+  school           School   @relation(fields: [school_id], references: [id])
+  loans            BookLoan[]
+
+  @@index([school_id])
+  @@map("books")
+}
+
+model BookLoan {
+  id               String   @id @default(cuid())
+  book_id          String
+  student_id       String
+  borrowed_at      DateTime @default(now())
+  due_date         DateTime
+  returned_at      DateTime?
+  status           LoanStatus @default(BORROWED)
+
+  book             Book     @relation(fields: [book_id], references: [id])
+  student          Student  @relation(fields: [student_id], references: [id])
+
+  @@index([student_id])
+  @@map("book_loans")
+}
+
+enum AssetCategory {
+  FURNITURE
+  ELECTRONICS
+  TEXTBOOKS
+  SPORTS
+  OTHER
+}
+
+enum AssetCondition {
+  GOOD
+  FAIR
+  DAMAGED
+  DISPOSED
+}
+
+model Asset {
+  id               String   @id @default(cuid())
+  school_id        String
+  name             String
+  category         AssetCategory
+  quantity         Int      @default(1)
+  condition        AssetCondition @default(GOOD)
+  location         String?
+  purchase_date    DateTime?
+  purchase_cost    Decimal  @default(0.00) @db.Decimal(12, 2)
+  notes            String?  @db.Text
+
+  school           School   @relation(fields: [school_id], references: [id])
+
+  @@index([school_id])
+  @@map("assets")
+}
