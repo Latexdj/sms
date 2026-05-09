@@ -2,7 +2,7 @@
 
 import { useSession } from "next-auth/react";
 import { PermissionNode, hasPermission } from "@/lib/permissions";
-import { Role } from "@prisma/client";
+type Role = "SUPER_ADMIN" | "ADMIN" | "HEADTEACHER" | "TEACHER" | "ACCOUNTANT" | "PARENT" | "STUDENT" | "LIBRARIAN";
 import { ShieldAlert } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 

@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { tenantPrisma } from "@/lib/prisma";
 import { sendSingle } from "@/services/sms";
-import { AttendanceStatus } from "@prisma/client";
+const AttendanceStatus = { PRESENT: "PRESENT", ABSENT: "ABSENT", LATE: "LATE", EXCUSED: "EXCUSED" } as const;
 
 export async function POST(req: Request) {
   try {

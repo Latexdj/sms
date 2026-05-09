@@ -3,7 +3,7 @@ import { tenantPrisma } from "@/lib/prisma";
 import basePrisma from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { DayOfWeek } from "@prisma/client";
+type DayOfWeek = "MONDAY" | "TUESDAY" | "WEDNESDAY" | "THURSDAY" | "FRIDAY";
 
 export async function GET(req: Request) {
   try {

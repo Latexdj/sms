@@ -1,4 +1,4 @@
-import { Role } from "@prisma/client";
+type Role = "SUPER_ADMIN" | "ADMIN" | "HEADTEACHER" | "TEACHER" | "ACCOUNTANT" | "PARENT" | "STUDENT" | "LIBRARIAN";
 
 // Core logic array structurally identifying exact Access Matrices inherently securely
 export type PermissionNode = 

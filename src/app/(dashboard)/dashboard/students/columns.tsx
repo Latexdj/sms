@@ -1,7 +1,23 @@
 "use client";
 
 import { ColumnDef } from "@tanstack/react-table";
-import { Student } from "@prisma/client";
+type Student = {
+  id: string;
+  school_id: string;
+  class_id: string | null;
+  admission_number: string;
+  first_name: string;
+  last_name: string;
+  dob: Date;
+  gender: string;
+  parent_name: string;
+  parent_phone: string;
+  address: string | null;
+  region: string | null;
+  status: string;
+  photo_url: string | null;
+  enrolled_at: Date;
+};
 import { Checkbox } from "@/components/ui/checkbox";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
