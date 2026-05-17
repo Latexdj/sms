@@ -61,7 +61,7 @@ export const columns: ColumnDef<Student & { class: any }>[] = [
         <div className="flex items-center gap-3">
           <Avatar className="h-9 w-9">
             <AvatarImage src={student.photo_url || ""} alt="Avatar" />
-            <AvatarFallback>{student.first_name[0]}{student.last_name[0]}</AvatarFallback>
+            <AvatarFallback>{(student.first_name?.[0] || "")}{(student.last_name?.[0] || "")}</AvatarFallback>
           </Avatar>
           <div className="flex flex-col">
             <span className="font-medium">{student.first_name} {student.last_name}</span>

@@ -28,5 +28,5 @@ export default withAuth(
 
 // Apply middleware strictly to these paths and their sub-paths
 export const config = {
-  matcher: ["/dashboard/:path*"],
+  matcher: ["/dashboard/:path*", "/super-admin/:path*"],
 };
