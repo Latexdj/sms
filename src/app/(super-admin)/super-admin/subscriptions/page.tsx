@@ -2,25 +2,50 @@
 
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Activity, CreditCard, ShieldCheck, Zap } from "lucide-react";
+import { Activity, CreditCard, ShieldCheck, Zap, ArrowUpRight, ChevronRight, TrendingUp } from "lucide-react";
 
 type SubscriptionStats = Record<string, number>;
-
 type SubscriptionSchool = {
   id: string;
   name: string;
   subscription_plan: string | null;
   created_at: string;
+};
+
+const PLAN_CONFIG: Record<string, {
+  icon: any; label: string;
+  gradient: string; glow: string;
+  bg: string; text: string; border: string;
+  price: string;
+}> = {
+  FREE_TRIAL: {
+    icon: Zap, label: "Free Trial",
+    gradient: "linear-gradient(135deg, #d97706, #f59e0b)",
+    glow: "rgba(245,158,11,0.35)",
+    bg: "rgba(245,158,11,0.1)", text: "#fbbf24", border: "rgba(245,158,11,0.3)",
+    price: "GHS 0/mo",
+  },
+  BASIC: {
+    icon: Activity, label: "Basic",
+    gradient: "linear-gradient(135deg, #1d4ed8, #3b82f6)",
+    glow: "rgba(59,130,246,0.35)",
+    bg: "rgba(59,130,246,0.1)", text: "#60a5fa", border: "rgba(59,130,246,0.3)",
+    price: "GHS 200/mo",
+  },
+  PREMIUM: {
+    icon: ShieldCheck, label: "Premium",
+    gradient: "linear-gradient(135deg, #7c3aed, #8b5cf6)",
+    glow: "rgba(139,92,246,0.35)",
+    bg: "rgba(139,92,246,0.15)", text: "#a78bfa", border: "rgba(139,92,246,0.4)",
+    price: "GHS 500/mo",
+  },
+  ENTERPRISE: {
+    icon: CreditCard, label: "Enterprise",
+    gradient: "linear-gradient(135deg, #047857, #10b981)",
+    glow: "rgba(16,185,129,0.35)",
+    bg: "rgba(16,185,129,0.1)", text: "#34d399", border: "rgba(16,185,129,0.3)",
+    price: "Custom",
+  },
 };
 
 export default function SubscriptionsManagement() {
@@ -38,117 +63,145 @@ export default function SubscriptionsManagement() {
           setSchools(data.schools);
           setStats(data.stats);
         }
-      } catch (error) {
-        console.error("Failed to fetch subscriptions:", error);
-      } finally {
-        setIsLoading(false);
-      }
+      } catch { } finally { setIsLoading(false); }
     }
-
-    if (session?.user?.role === "SUPER_ADMIN") {
-      fetchSubscriptions();
-    }
+    if (session?.user?.role === "SUPER_ADMIN") fetchSubscriptions();
   }, [session]);
 
-  const planConfig: Record<string, { icon: any; color: string; label: string }> = {
-    FREE_TRIAL: { icon: Zap, color: "text-amber-600 bg-amber-100", label: "Free Trial" },
-    BASIC: { icon: Activity, color: "text-blue-600 bg-blue-100", label: "Basic Plan" },
-    PREMIUM: { icon: ShieldCheck, color: "text-indigo-600 bg-indigo-100", label: "Premium Plan" },
-    ENTERPRISE: { icon: CreditCard, color: "text-emerald-600 bg-emerald-100", label: "Enterprise" },
-  };
-
-  const getPlanDetails = (plan: string | null) => {
-    const key = plan || "FREE_TRIAL";
-    return planConfig[key] || { icon: Activity, color: "text-slate-600 bg-slate-100", label: key };
-  };
+  const totalSchools = Object.values(stats).reduce((a, b) => a + b, 0);
 
   return (
-    <div className="flex-1 space-y-6 p-6">
+    <div className="flex-1 p-6 lg:p-8 space-y-8">
+      {/* Header */}
       <div>
-        <h2 className="text-2xl font-bold tracking-tight">Subscriptions Overview</h2>
-        <p className="text-muted-foreground">
-          Monitor and manage school subscriptions across the platform
+        <h1 className="text-2xl font-bold text-white tracking-tight">Subscriptions & Plans</h1>
+        <p className="text-sm mt-1" style={{ color: "rgba(148,163,184,0.8)" }}>
+          Monitor subscription tiers across {totalSchools} schools on the platform.
         </p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {Object.keys(planConfig).map((planKey) => {
-          const { icon: Icon, color, label } = planConfig[planKey];
+      {/* Plan stat cards */}
+      <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
+        {Object.entries(PLAN_CONFIG).map(([key, plan]) => {
+          const Icon = plan.icon;
+          const count = stats[key] ?? 0;
+          const pct = totalSchools > 0 ? Math.round((count / totalSchools) * 100) : 0;
           return (
-            <Card key={planKey}>
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium">{label}</CardTitle>
-                <div className={`p-2 rounded-full ${color.split(" ")[1]}`}>
-                  <Icon className={`h-4 w-4 ${color.split(" ")[0]}`} />
+            <div
+              key={key}
+              className="relative rounded-2xl p-5 overflow-hidden group"
+              style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}
+            >
+              <div
+                className="absolute -top-8 -right-8 h-24 w-24 rounded-full blur-2xl opacity-20 group-hover:opacity-30 transition-opacity"
+                style={{ background: plan.gradient }}
+              />
+              <div className="relative">
+                <div className="flex items-center justify-between mb-4">
+                  <div
+                    className="flex h-10 w-10 items-center justify-center rounded-xl"
+                    style={{ background: plan.gradient, boxShadow: `0 0 20px ${plan.glow}` }}
+                  >
+                    <Icon className="h-5 w-5 text-white" />
+                  </div>
+                  <span className="text-[11px] font-medium text-slate-500">{plan.price}</span>
                 </div>
-              </CardHeader>
-              <CardContent>
                 {isLoading ? (
-                  <div className="h-7 w-12 animate-pulse rounded bg-muted" />
+                  <div className="h-8 w-16 rounded-lg bg-white/10 animate-pulse mb-2" />
                 ) : (
-                  <div className="text-2xl font-bold">{stats[planKey] || 0}</div>
+                  <div className="text-3xl font-bold text-white mb-0.5">{count}</div>
                 )}
-                <p className="text-xs text-muted-foreground mt-1">Active Schools</p>
-              </CardContent>
-            </Card>
+                <div className="text-xs font-medium text-slate-500 mb-3">{plan.label} Schools</div>
+                {/* Progress bar */}
+                <div className="h-1.5 rounded-full bg-white/10 overflow-hidden">
+                  <div
+                    className="h-full rounded-full transition-all duration-1000"
+                    style={{ width: `${pct}%`, background: plan.gradient }}
+                  />
+                </div>
+                <div className="mt-1.5 flex items-center justify-between">
+                  <span className="text-[11px] text-slate-600">{pct}% of total</span>
+                  <span className="flex items-center gap-1 text-[11px]" style={{ color: "#34d399" }}>
+                    <TrendingUp className="h-3 w-3" /> Active
+                  </span>
+                </div>
+              </div>
+            </div>
           );
         })}
       </div>
 
-      <div className="bg-white border rounded-lg overflow-hidden shadow-sm">
-        <div className="p-4 border-b bg-slate-50">
-          <h3 className="font-semibold">Recent Subscription Activity</h3>
+      {/* Subscription table */}
+      <div
+        className="rounded-2xl overflow-hidden"
+        style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}
+      >
+        <div
+          className="px-6 py-4 flex items-center justify-between"
+          style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}
+        >
+          <h3 className="text-sm font-semibold text-white">All School Subscriptions</h3>
+          <span className="text-xs text-slate-500">{schools.length} schools</span>
         </div>
-        <div className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow className="bg-slate-50 hover:bg-slate-50">
-                <TableHead>School Name</TableHead>
-                <TableHead>Current Plan</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Joined Date</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoading ? (
-                <TableRow>
-                  <TableCell colSpan={4} className="h-32 text-center text-muted-foreground">
-                    Loading subscription data...
-                  </TableCell>
-                </TableRow>
-              ) : schools.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={4} className="h-32 text-center text-muted-foreground">
-                    No schools found.
-                  </TableCell>
-                </TableRow>
-              ) : (
-                schools.map((school) => {
-                  const details = getPlanDetails(school.subscription_plan);
-                  return (
-                    <TableRow key={school.id}>
-                      <TableCell className="font-medium">{school.name}</TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <details.icon className={`h-4 w-4 ${details.color.split(" ")[0]}`} />
-                          <span>{details.label}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200">
-                          Active
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right text-muted-foreground">
-                        {new Date(school.created_at).toLocaleDateString()}
-                      </TableCell>
-                    </TableRow>
-                  );
-                })
-              )}
-            </TableBody>
-          </Table>
+
+        {/* Table header */}
+        <div
+          className="grid grid-cols-[2fr_1.5fr_1fr_1fr] gap-4 px-6 py-3 text-[11px] font-semibold uppercase tracking-widest"
+          style={{ borderBottom: "1px solid rgba(255,255,255,0.06)", color: "rgba(148,163,184,0.5)" }}
+        >
+          <span>School</span>
+          <span>Plan</span>
+          <span>Status</span>
+          <span className="text-right">Joined</span>
         </div>
+
+        {isLoading ? (
+          <div className="flex items-center justify-center h-40">
+            <div className="h-8 w-8 rounded-full border-2 border-violet-500 border-t-transparent animate-spin" />
+          </div>
+        ) : schools.length === 0 ? (
+          <div className="flex items-center justify-center h-40">
+            <p className="text-sm text-slate-600">No subscription data found.</p>
+          </div>
+        ) : (
+          schools.map((school, i) => {
+            const plan = PLAN_CONFIG[school.subscription_plan ?? "FREE_TRIAL"] ?? PLAN_CONFIG.FREE_TRIAL;
+            const Icon = plan.icon;
+            return (
+              <div
+                key={school.id}
+                className="grid grid-cols-[2fr_1.5fr_1fr_1fr] gap-4 items-center px-6 py-4 hover:bg-white/[0.02] transition-colors"
+                style={{ borderTop: i > 0 ? "1px solid rgba(255,255,255,0.05)" : "none" }}
+              >
+                <div className="font-medium text-sm text-white">{school.name}</div>
+                <div className="flex items-center gap-2">
+                  <div
+                    className="flex h-6 w-6 items-center justify-center rounded-lg"
+                    style={{ background: plan.bg, border: `1px solid ${plan.border}` }}
+                  >
+                    <Icon className="h-3.5 w-3.5" style={{ color: plan.text }} />
+                  </div>
+                  <span
+                    className="text-xs font-semibold px-2 py-0.5 rounded-full"
+                    style={{ background: plan.bg, color: plan.text, border: `1px solid ${plan.border}` }}
+                  >
+                    {plan.label}
+                  </span>
+                </div>
+                <span
+                  className="inline-flex items-center gap-1.5 text-xs font-semibold"
+                  style={{ color: "#34d399" }}
+                >
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                  Active
+                </span>
+                <span className="text-sm text-slate-500 text-right">
+                  {new Date(school.created_at).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })}
+                </span>
+              </div>
+            );
+          })
+        )}
       </div>
     </div>
   );

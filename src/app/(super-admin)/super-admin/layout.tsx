@@ -20,12 +20,15 @@ export default async function SuperAdminLayout({
   }
 
   return (
-    <div className="flex min-h-screen bg-slate-50/50">
+    <div
+      className="flex min-h-screen"
+      style={{ background: "linear-gradient(135deg, #0f0c29 0%, #1a1535 100%)" }}
+    >
       <SuperAdminSidebar />
-      <div className="flex flex-1 flex-col overflow-hidden">
-        <SuperAdminHeader 
-          name={session.user.name || "Super Admin"} 
-          email={session.user.email || ""} 
+      <div className="flex flex-1 flex-col overflow-hidden min-w-0">
+        <SuperAdminHeader
+          name={session.user.name || "Super Admin"}
+          email={session.user.email || ""}
         />
         <main className="flex-1 overflow-y-auto">
           {children}
