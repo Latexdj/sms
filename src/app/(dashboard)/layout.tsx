@@ -18,6 +18,11 @@ export default async function DashboardLayout({
   }
 
   const role = (session.user as any).role as Role;
+  
+  if (role === "SUPER_ADMIN") {
+    redirect("/super-admin");
+  }
+
   const name = session.user.name ?? "User";
   const email = session.user.email ?? "";
 

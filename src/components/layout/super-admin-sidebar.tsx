@@ -3,13 +3,16 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { LayoutDashboard, Building2, CreditCard, Settings, Shield } from "lucide-react";
+import { LayoutDashboard, Building2, CreditCard, Settings, Shield, Globe, Banknote, ShieldAlert } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
 export const superAdminNavigationLinks = [
   { name: "Dashboard", href: "/super-admin", icon: LayoutDashboard },
   { name: "Schools", href: "/super-admin/schools", icon: Building2 },
   { name: "Subscriptions", href: "/super-admin/subscriptions", icon: CreditCard },
+  { name: "Global Config", href: "/super-admin/global-config", icon: Globe },
+  { name: "Billing & SaaS", href: "/super-admin/billing", icon: Banknote },
+  { name: "Security", href: "/super-admin/security", icon: ShieldAlert },
   { name: "Settings", href: "/super-admin/settings", icon: Settings },
 ];
 
