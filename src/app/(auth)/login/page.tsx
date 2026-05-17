@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { signIn } from "next-auth/react";
+import { signIn, getSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -33,7 +33,12 @@ export default function LoginPage() {
       setLoading(false);
     } else {
       toast.success("Successfully logged in");
-      router.push("/dashboard");
+      const session = await getSession();
+      if (session?.user?.role === "SUPER_ADMIN") {
+        router.push("/super-admin");
+      } else {
+        router.push("/dashboard");
+      }
       router.refresh();
     }
   };

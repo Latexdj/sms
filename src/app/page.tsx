@@ -1,7 +1,15 @@
 import { redirect } from "next/navigation";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "@/lib/auth";
 
-// Root URL — send unauthenticated visitors to login,
-// middleware will redirect authenticated users from /login to /dashboard.
-export default function RootPage() {
+export default async function RootPage() {
+  const session = await getServerSession(authOptions);
+  
+  if (session?.user?.role === "SUPER_ADMIN") {
+    redirect("/super-admin");
+  } else if (session?.user) {
+    redirect("/dashboard");
+  }
+  
   redirect("/login");
 }

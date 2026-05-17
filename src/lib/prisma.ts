@@ -22,6 +22,13 @@ const basePrisma = globalThis.prismaGlobal ?? prismaClientSingleton()
 
 if (process.env.NODE_ENV !== 'production') globalThis.prismaGlobal = basePrisma
 
+const TENANT_MODELS = [
+  'User', 'Class', 'Student', 'FeeStructure', 'Invoice', 'SmsLog', 'Attendance',
+  'Subject', 'Exam', 'Assignment', 'Timetable', 'TeacherProfile', 'BusRoute',
+  'CafeteriaItem', 'StudentWallet', 'CafeteriaTransaction', 'Account',
+  'LedgerTransaction', 'Book', 'Asset'
+];
+
 /**
  * Creates a tenant-scoped Prisma client.
  * Auto-filters operations by school_id.
@@ -29,38 +36,66 @@ if (process.env.NODE_ENV !== 'production') globalThis.prismaGlobal = basePrisma
 export const tenantPrisma = (schoolId: string) => {
   return basePrisma.$extends({
     query: {
-      user: {
-        async findMany({ args, query }) {
-          args.where = { ...args.where, school_id: schoolId }
+      $allModels: {
+        async findMany({ model, args, query }) {
+          if (TENANT_MODELS.includes(model)) {
+            args.where = { ...args.where, school_id: schoolId }
+          }
           return query(args)
         },
-        async findFirst({ args, query }) {
-          args.where = { ...args.where, school_id: schoolId }
+        async findFirst({ model, args, query }) {
+          if (TENANT_MODELS.includes(model)) {
+            args.where = { ...args.where, school_id: schoolId }
+          }
           return query(args)
         },
-        async findUnique({ args, query }) {
-          const { where, ...rest } = args
-          return basePrisma.user.findFirst({
-            ...rest,
-            where: { ...where, school_id: schoolId },
-          }) as any
-        },
-        async update({ args, query }) {
-          args.where = { ...args.where, school_id: schoolId }
+        async findUnique({ model, args, query }) {
+          if (TENANT_MODELS.includes(model)) {
+            const { where, ...rest } = args as any;
+            const modelDelegate = (basePrisma as any)[model.charAt(0).toLowerCase() + model.slice(1)];
+            return modelDelegate.findFirst({
+              ...rest,
+              where: { ...where, school_id: schoolId },
+            });
+          }
           return query(args)
         },
-        async delete({ args, query }) {
-          args.where = { ...args.where, school_id: schoolId }
+        async update({ model, args, query }) {
+          if (TENANT_MODELS.includes(model)) {
+            args.where = { ...args.where, school_id: schoolId } as any
+          }
           return query(args)
         },
-        async updateMany({ args, query }) {
-          args.where = { ...args.where, school_id: schoolId }
+        async delete({ model, args, query }) {
+          if (TENANT_MODELS.includes(model)) {
+            args.where = { ...args.where, school_id: schoolId } as any
+          }
           return query(args)
         },
-        async deleteMany({ args, query }) {
-          args.where = { ...args.where, school_id: schoolId }
+        async updateMany({ model, args, query }) {
+          if (TENANT_MODELS.includes(model)) {
+            args.where = { ...args.where, school_id: schoolId }
+          }
           return query(args)
         },
+        async deleteMany({ model, args, query }) {
+          if (TENANT_MODELS.includes(model)) {
+            args.where = { ...args.where, school_id: schoolId }
+          }
+          return query(args)
+        },
+        async count({ model, args, query }) {
+          if (TENANT_MODELS.includes(model)) {
+            args.where = { ...args.where, school_id: schoolId }
+          }
+          return query(args)
+        },
+        async aggregate({ model, args, query }) {
+          if (TENANT_MODELS.includes(model)) {
+            args.where = { ...args.where, school_id: schoolId }
+          }
+          return query(args)
+        }
       },
     },
   })
