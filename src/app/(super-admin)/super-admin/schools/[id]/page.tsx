@@ -53,13 +53,15 @@ export default function SchoolDetailPage({ params }: { params: Promise<{ id: str
   const fetchSchool = async () => {
     try {
       const [sRes, uRes] = await Promise.all([
-        fetch(`/api/super-admin/schools?id=${id}`),
+        fetch(`/api/super-admin/schools/${id}`),
         fetch(`/api/super-admin/schools/${id}/admins`),
       ]);
       if (sRes.ok) {
         const data = await sRes.json();
-        const found = Array.isArray(data) ? data.find((s: School) => s.id === id) : data;
-        if (found) { setSchool(found); setSubForm(f => ({ ...f, plan: found.subscription_plan ?? "BASIC" })); }
+        setSchool(data);
+        setSubForm(f => ({ ...f, plan: data.subscription_plan ?? "BASIC" }));
+      } else {
+        toast.error("Failed to load school details");
       }
       if (uRes.ok) setUsers(await uRes.json());
     } catch { toast.error("Failed to load school"); }
