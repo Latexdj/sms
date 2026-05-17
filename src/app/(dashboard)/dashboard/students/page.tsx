@@ -24,7 +24,7 @@ export default function StudentsPage() {
   const role = (session?.user as any)?.role || "";
   const isAdmin = ["SUPER_ADMIN", "ADMIN", "HEADTEACHER"].includes(role);
 
-  const [data, setData] = useState([]);
+  const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>([]);
   
@@ -151,10 +151,8 @@ export default function StudentsPage() {
                 <Download className="mr-2 h-4 w-4" /> Export CSV
               </Button>
               <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button size="sm" className="font-semibold shadow-sm">
-                    <UserPlus className="mr-2 h-4 w-4" /> New Admission
-                  </Button>
+                <DialogTrigger render={<Button size="sm" className="font-semibold shadow-sm" />}>
+                  <UserPlus className="mr-2 h-4 w-4" /> New Admission
                 </DialogTrigger>
                 <DialogContent className="sm:max-w-md">
                   <DialogHeader>

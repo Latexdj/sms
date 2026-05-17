@@ -202,8 +202,8 @@ export default function SchoolsManagement() {
                 {school.is_active ? "Active" : "Suspended"}
               </span>
               <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-500 hover:text-white hover:bg-white/10"><MoreVertical className="h-4 w-4" /></Button>
+                <DropdownMenuTrigger render={<Button variant="ghost" size="icon" className="h-8 w-8 text-slate-500 hover:text-white hover:bg-white/10" />}>
+                  <MoreVertical className="h-4 w-4" />
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="border-slate-800 bg-[#1a1535] w-52">
                   <DropdownMenuItem className="text-slate-300 focus:text-white focus:bg-white/10 cursor-pointer gap-2" onClick={() => openDialog("detail", school)}><Eye className="h-4 w-4" /> View Details</DropdownMenuItem>
@@ -259,10 +259,10 @@ export default function SchoolsManagement() {
             <Field label="Email Address"><Input type="email" required value={adminForm.email} onChange={e=>setAdminForm({...adminForm,email:e.target.value})} style={inputStyle} className="border" /></Field>
             <Field label="Password"><Input type="password" required value={adminForm.password} onChange={e=>setAdminForm({...adminForm,password:e.target.value})} style={inputStyle} className="border" /></Field>
             <Field label="Role">
-              <Select value={adminForm.role} onValueChange={v=>setAdminForm({...adminForm,role:v})}>
+              <Select value={adminForm.role ?? "ADMIN"} onValueChange={v=>setAdminForm({...adminForm,role:v ?? "ADMIN"})}>
                 <SelectTrigger style={inputStyle} className="border"><SelectValue /></SelectTrigger>
                 <SelectContent className="bg-[#1a1535] border-slate-700">
-                  {["ADMIN","HEADTEACHER","TEACHER","ACCOUNTANT","LIBRARIAN"].map(r=><SelectItem key={r} value={r} className="text-white focus:bg-white/10">{r}</SelectItem>)}
+                  {(["ADMIN","HEADTEACHER","TEACHER","ACCOUNTANT","LIBRARIAN"] as string[]).map(r=><SelectItem key={r} value={r} className="text-white focus:bg-white/10">{r}</SelectItem>)}
                 </SelectContent>
               </Select>
             </Field>
@@ -279,10 +279,10 @@ export default function SchoolsManagement() {
         <DlgContent title={`Reset Password — ${activeSchool?.name}`}>
           <form onSubmit={handleResetPassword} className="space-y-4 mt-2">
             <Field label="Select User">
-              <Select value={passwordForm.userId} onValueChange={v=>setPasswordForm({...passwordForm,userId:v})}>
+              <Select value={passwordForm.userId ?? ""} onValueChange={v=>setPasswordForm({...passwordForm,userId:v ?? ""})}>
                 <SelectTrigger style={inputStyle} className="border"><SelectValue placeholder="Choose a user..." /></SelectTrigger>
                 <SelectContent className="bg-[#1a1535] border-slate-700">
-                  {schoolUsers.map(u=><SelectItem key={u.id} value={u.id} className="text-white focus:bg-white/10">{u.name} — {u.role}</SelectItem>)}
+                  {schoolUsers.map(u=><SelectItem key={u.id} value={String(u.id)} className="text-white focus:bg-white/10">{u.name} — {u.role}</SelectItem>)}
                 </SelectContent>
               </Select>
             </Field>
@@ -310,10 +310,10 @@ export default function SchoolsManagement() {
             </div>
             <form onSubmit={handleSubscription} className="space-y-4">
               <Field label="New Plan">
-                <Select value={subForm.plan} onValueChange={v=>setSubForm({...subForm,plan:v})}>
+                <Select value={subForm.plan ?? "BASIC"} onValueChange={v=>setSubForm({...subForm,plan:v ?? "BASIC"})}>
                   <SelectTrigger style={inputStyle} className="border"><SelectValue /></SelectTrigger>
                   <SelectContent className="bg-[#1a1535] border-slate-700">
-                    {[["FREE_TRIAL","Free Trial"],["BASIC","Basic"],["PREMIUM","Premium"],["ENTERPRISE","Enterprise"]].map(([v,l])=>(
+                    {([["FREE_TRIAL","Free Trial"],["BASIC","Basic"],["PREMIUM","Premium"],["ENTERPRISE","Enterprise"]] as [string,string][]).map(([v,l])=>(
                       <SelectItem key={v} value={v} className="text-white focus:bg-white/10">{l}</SelectItem>
                     ))}
                   </SelectContent>
@@ -321,10 +321,10 @@ export default function SchoolsManagement() {
               </Field>
               {subForm.plan !== "FREE_TRIAL" && (
                 <Field label="Duration">
-                  <Select value={subForm.durationMonths} onValueChange={v=>setSubForm({...subForm,durationMonths:v})}>
+                  <Select value={subForm.durationMonths ?? "6"} onValueChange={v=>setSubForm({...subForm,durationMonths:v ?? "6"})}>
                     <SelectTrigger style={inputStyle} className="border"><SelectValue /></SelectTrigger>
                     <SelectContent className="bg-[#1a1535] border-slate-700">
-                      {[["1","1 Month"],["3","3 Months"],["6","6 Months"],["12","1 Year"],["24","2 Years"]].map(([v,l])=>(
+                      {([["1","1 Month"],["3","3 Months"],["6","6 Months"],["12","1 Year"],["24","2 Years"]] as [string,string][]).map(([v,l])=>(
                         <SelectItem key={v} value={v} className="text-white focus:bg-white/10">{l}</SelectItem>
                       ))}
                     </SelectContent>
