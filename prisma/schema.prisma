@@ -28,10 +28,12 @@ model School {
   circuit           String?
   phone             String?
   email             String?
-  subscription_plan String?  @default("FREE_TRIAL")
-  created_at        DateTime @default(now())
-  report_config     Json?
-  academic_config   Json?
+  subscription_plan     String?  @default("FREE_TRIAL")
+  subscription_expires_at DateTime?
+  is_active             Boolean  @default(true)
+  created_at            DateTime @default(now())
+  report_config         Json?
+  academic_config       Json?
 
   users    User[]
   classes        Class[]
